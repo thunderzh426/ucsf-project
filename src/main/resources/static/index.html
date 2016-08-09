@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- JQuery import -->
+  <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+</head>
+
+<body>
+
+  <!-- Upload file form -->
+  <form id="upload-file-form">
+    <label for="upload-file-input">Upload your file:</label>
+    <input id="upload-file-input" type="file" name="uploadfile" accept="*" />
+    <br />
+    <span id="upload-file-message"></span>
+  </form>
+  <br />
+  <hr />
+  
+  <button id="get-anbs-btn" onclick="makeGetCall('/anbs')">Get all AccessionNumberBlocks</button>
+  <button id="get-profiles-btn" onclick="makeGetCall('/profiles')">Get all Profiles</button>
+  <button id="get-trials-btn" onclick="makeGetCall('/trials')">Get all Trials</button>
+  <div>
+  	<label for="trial-id">Get Trial By Id:</label>
+    <input id="trial-id" type="text"/>
+    <button onclick="makeGetCall('/trial/','#trial-id')">Send Request</button>
+  </div>
+  <div>
+  	<label for="profile-trials">Get Trials By Profile Id:</label>
+    <input id="profile-trials-id" type="text"/>
+    <button onclick="makeGetProfileCall()">Send Request</button>
+  </div>
+  
+  <hr/>
+  		Create a new AccessionNumberBlock <button onclick="$('#create-anb').show()">Show</button><button onclick="$('#create-anb').hide()">hide</button>
+  <hr/>
+  <div id="create-anb">
+	  	<label>First Name:</label>
+	  	 	<input id="first-name" type="text"/>
+	  	 	<br/>
+	  	<label>Last Name:</label>
+	  		<input id="last-name" type="text"/><br/>
+	  	<label>DoB(yyyy-mm-dd):</label>
+	  		<input id="dob" type="text"/><br/>
+	  	<label>Zip Code:</label>
+	  		<input id="zipcode" type="text"/><br/>
+	  	<label>Gender:</label>
+	  		<input id="gender" type="text"/><br/>
+	  	<label>Cancer Type:</label>
+	  		<input id="cancer-type" type="text"/><br/>
+	  	<label>Clinical Stage:</label>
+	  		<input id="clinical-stage" type="text"/><br/>
+	  	<label>Mutations:</label>
+	  		<input id="mutations" type="text"/><br/>
+	  	
+	   
+	    <button onclick="createAnb()">Create</button>
+  </div>
+  <hr/>
+  <div>
+  	<label for="del-anb">Delete all accessions:</label>
+    <button onclick="makeDeleteCall('/anbs')">DELETE</button>
+  </div>
+  <div>
+  	<label for="del-profile">Delete all profiles:</label>
+    <button onclick="makeDeleteCall('/profiles')">DELETE</button>
+  </div>
+  <div>
+  	<label for="del-trials">Delete all trials:</label>
+    <button onclick="makeDeleteCall('/trials')">DELETE</button>
+  </div>
+  <div id="retrieved-data"></div>
+  <!-- Javascript functions -->
+  <script>
+  
+    // bind the on-change event for the input element (triggered when a file
+    // is chosen)
+    $(document).ready(function() {
+      $("#upload-file-input").on("change", uploadFile);
+      $('#create-anb').hide();
+    });
+    
+    /**
+     * Upload the file sending it via Ajax at the Spring Boot server.
+     */
+    function uploadFile() {
+      $.ajax({
+        url: "/uploadFile",
+        type: "POST",
+        data: new FormData($("#upload-file-form")[0]),
+        enctype: 'multipart/form-data',
+        processData: false,
+        contentType: false,
+        cache: false,
+        success: function () {
+          // Handle upload success
+          $("#upload-file-message").text("File succesfully uploaded");
+        },
+        error: function () {
+          // Handle upload error
+          $("#upload-file-message").text(
+              "File not uploaded (perhaps it's too much big)");
+        }
+      });
+    } // function uploadFile
+    function createAnb() {
+        $.ajax({
+          url: "/create",
+          type: "POST",
+          data: JSON.stringify({
+        	  "firstName": $("#first-name").val(),
+        	  "lastName": $("#last-name").val(),
+        	  "dob": $("#dob").val(),
+        	  "zipCode": $("#zipcode").val(),
+        	  "gender": $("#gender").val(),
+        	  "cancerType": $("#cancer-type").val(),
+        	  "clinicalStage": $("#clinical-stage").val(),
+        	  "mutations": $("#mutations").val()
+          }),
+          contentType: "application/json",
+	   	  dataType: "json",
+          success: function () {
+            // Handle upload success
+            $("#retrieved-data").text("New accession successfully created.");
+          },
+          error: function () {
+            // Handle upload error
+            $("#retrieved-data").text(
+            		"Error creating accession.");
+          }
+        });
+      } // function uploadFile
+    function makeGetCall(url, id) {
+    	if (id != undefined)
+    		var url = url + $(id).val();
+    	$("#retrieved-data").text("");
+        $.ajax({
+	       	type: "GET",
+	   		url: url+"?_=" +new Date().getTime(),
+	   		contentType:"application/json",
+	   		dataType: "json",
+	   		data: {},
+          success: function (data) {
+            // Handle upload success
+            $("#retrieved-data").text(JSON.stringify(data));
+          },
+          error: function () {
+            // Handle upload error
+            $("#retrieved-data").text("Error getting data.");
+          }
+        });
+      }
+    function makeGetProfileCall() {
+    	$("#retrieved-data").text("");
+        $.ajax({
+	       	type: "GET",
+	   		url: "/profile/"+$("#profile-trials-id").val()+"/trials?_=" + new Date().getTime(),
+	   		contentType:"application/json",
+	   		dataType: "json",
+	   		data: {},
+          success: function (data) {
+            // Handle upload success
+            $("#retrieved-data").text(JSON.stringify(data));
+          },
+          error: function () {
+            // Handle upload error
+            $("#retrieved-data").text("Error getting data.");
+          }
+        });
+      }
+    function makeDeleteCall(url) {
+    	$("#retrieved-data").text("");
+        $.ajax({
+	       	type: "DELETE",
+	   		url: url+"?_=" +new Date().getTime(),
+          success: function () {
+            // Handle upload success
+            alert("Delete successful.");
+          },
+          error: function () {
+            // Handle upload error
+            //$("#retrieved-data").text("Error deleting data.");
+        	  alert("Error.");
+          }
+        });
+      }
+      
+  </script>
+  
+</body>
+
+</html>
