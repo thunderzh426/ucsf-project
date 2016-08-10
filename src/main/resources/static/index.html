@@ -15,7 +15,10 @@
     <br />
     <span id="upload-file-message"></span>
   </form>
-  <br />
+  <button id="get-todo-btn" onclick="makeGetCall('/todolist')">List all todo files</button>
+  <button id="get-done-btn" onclick="makeGetCall('/donelist')">List all done files</button>
+  <button id="process-btn" onclick="processTodoFiles()">Process</button>
+  <button id="delete-done-btn" onclick="makeDeleteCall('donelist')">Delete done files</button>
   <hr />
   
   <button id="get-anbs-btn" onclick="makeGetCall('/anbs')">Get all AccessionNumberBlocks</button>
@@ -166,6 +169,21 @@
           error: function () {
             // Handle upload error
             $("#retrieved-data").text("Error getting data.");
+          }
+        });
+      }
+    function processTodoFiles() {
+    	$("#retrieved-data").text("");
+        $.ajax({
+	       	type: "POST",
+	   		url: "/todolist/process?_=" + new Date().getTime(),
+          success: function (data) {
+            // Handle upload success
+            $("#retrieved-data").text("Data imported succussfully.");
+          },
+          error: function () {
+            // Handle upload error
+            $("#retrieved-data").text("Error processing data.");
           }
         });
       }

@@ -11,7 +11,9 @@ import ucsf.services.GeneralService;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +56,10 @@ public class AccessionNumberBlockController {
     try {
       // Get the filename and build the local file path
       String filename = uploadfile.getOriginalFilename();
-      String basename = FilenameUtils.getBaseName(filename);
-      String directory = env.getProperty("ucsf.temp.file.path");
+      //String basename = FilenameUtils.getBaseName(filename);
+      String directory = env.getProperty("ucsf.todo.file.path");
       String filepath = Paths.get(directory, filename).toString();
-
+      /*
       ByteArrayInputStream bytestream = new ByteArrayInputStream(uploadfile.getBytes());
       String str = IOUtils.toString(bytestream, StandardCharsets.UTF_8);
       JSONObject jsonObj = new JSONObject(str);
@@ -69,7 +71,12 @@ public class AccessionNumberBlockController {
       List<Trial> trials = generalService.parsetrials(profile.getId(), trialsJson);
       for(Trial t: trials){
     	  trialDao.create(t);
-      }
+      }*/
+      // Save the file locally
+      BufferedOutputStream stream =
+          new BufferedOutputStream(new FileOutputStream(new File(filepath)));
+      stream.write(uploadfile.getBytes());
+      stream.close();
       return new ResponseEntity<>(HttpStatus.OK);
     }
     catch (Exception e) {
@@ -79,6 +86,94 @@ public class AccessionNumberBlockController {
     
     
   } // method uploadFile
+  
+  @RequestMapping(value="/todolist", method = RequestMethod.GET)
+  @ResponseBody
+  public Object getTodoList() {
+    try {
+    	File folder = new File(env.getProperty("ucsf.todo.file.path"));
+    	File[] listOfFiles = folder.listFiles();
+    	List<String> filenames = new ArrayList<String>();
+    	if (listOfFiles != null){
+    		for (File f: listOfFiles){
+    			filenames.add(f.getName());
+    		}
+    	}
+    	return filenames;
+    }
+    catch (Exception ex) {
+      return "Error getting todo list" + ex.toString();
+    }
+  }
+  
+  @RequestMapping(value="/donelist", method = RequestMethod.GET)
+  @ResponseBody
+  public Object getDoneList() {
+    try {
+    	File folder = new File(env.getProperty("ucsf.done.file.path"));
+    	File[] listOfFiles = folder.listFiles();
+    	List<String> filenames = new ArrayList<String>();
+    	if (listOfFiles != null){
+    		for (File f: listOfFiles){
+    			filenames.add(f.getName());
+    		}
+    	}
+    	return filenames;
+    }
+    catch (Exception ex) {
+      return "Error getting donelist. " + ex.toString();
+    }
+  }
+  
+  @RequestMapping(value="/donelist", method = RequestMethod.DELETE)
+  @ResponseBody
+  public Object deleteDoneList() {
+    try {
+    	File folder = new File(env.getProperty("ucsf.done.file.path"));
+    	File[] listOfFiles = folder.listFiles();
+    	if (listOfFiles != null){
+    		for (File f: listOfFiles){
+    			f.delete();
+    		}
+    	}
+    	return new ResponseEntity<>(HttpStatus.OK);
+    }
+    catch (Exception ex) {
+      return "Error deleting done list. " + ex.toString();
+    }
+  }
+  
+  
+  @RequestMapping(value="/todolist/process", method = RequestMethod.POST)
+  @ResponseBody
+  public Object processTodoFiles() {
+    try {
+    	File folder = new File(env.getProperty("ucsf.todo.file.path"));
+    	File[] listOfFiles = folder.listFiles();
+    	if (listOfFiles != null){
+    		for (File f: listOfFiles){
+				ByteArrayInputStream bytestream = new ByteArrayInputStream(Files.readAllBytes(Paths.get(f.getAbsolutePath())));
+				String str = IOUtils.toString(bytestream, StandardCharsets.UTF_8);
+				JSONObject jsonObj = new JSONObject(str);
+				JSONObject profileJson = jsonObj.getJSONObject("profile");
+				JSONObject trialsJson = jsonObj.getJSONObject("trials");
+				long id = Long.parseLong(FilenameUtils.getBaseName(f.getName()));
+				Profile profile = generalService.parseProfile(id,profileJson);
+				profileDao.create(profile);
+				List<Trial> trials = generalService.parsetrials(profile.getId(), trialsJson);
+				for(Trial t: trials){
+				  trialDao.create(t);
+				}
+				Files.move(Paths.get(f.getAbsolutePath()), Paths.get(env.getProperty("ucsf.done.file.path"), f.getName()));
+    		}
+    	}
+    	return new ResponseEntity<>(HttpStatus.OK);
+    }
+    catch (Exception ex) {
+      return "Error processing files " + ex.toString();
+    }
+  }
+  
   /**
    * Create a new user with an auto-generated id and email and name as passed 
    * values.
