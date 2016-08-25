@@ -1,0 +1,47 @@
+<project name="common utils target set">
+
+	<target name="ucsf.mvn.clean.all">
+		<exec executable="${mvn.command}" dir="${ucsf-backend.folder}" spawn="false">
+			<arg value="clean" />
+		</exec>
+	</target>
+
+	<target name="ucsf.install.dependance">
+		<exec executable="${mvn.command}" dir="${ucsf-backend.folder}" spawn="false">
+			<arg value="install" />
+		</exec>
+	</target>
+
+
+
+	<target name="mvn.clean.package.staging">
+		<exec executable="${mvn.command}" dir="${project.folder}" spawn="false">
+			<arg value="clean" />
+		</exec>
+		<exec executable="${mvn.command}" dir="${project.folder}" spawn="false">
+			<arg value="package" />
+		</exec>
+	</target>
+
+	<target name="copy.target.file.to.runtime">
+		<delete file="${runtime.folder}/${target.file.name}">
+		</delete>
+		<copy todir="${runtime.folder}">
+			<fileset file="${target.file.name}" dir="${project.folder}/target">
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="check.runtime.file.exist">
+	    <available file="${runtime.folder}/${target.file.name}" property="runtime.file.present"/>
+	</target>
+	
+	<target name="backup.runtime.file" depends="check.runtime.file.exist" if="runtime.file.present">
+		<tstamp>
+			<format property="current.time" pattern="yyyyMMddhhmmss" />
+		</tstamp>
+		<mkdir dir="${backup.folder}"/>
+		<copy tofile="${backup.folder}/${target.file.name}-${current.time}.bak" file="${runtime.folder}/${target.file.name}">
+		</copy>
+	</target>
+</project>

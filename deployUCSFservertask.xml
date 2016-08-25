@@ -1,0 +1,59 @@
+<project name="deploy UCSF server" basedir="." default="deploy.war">
+	<property file="./environment.properties" />
+	<property file="./deployUCSFServerTask.properties" />
+	<property name="project.folder" value="${project.folder}" />
+	<property name="backup.folder" value="${backup.folder}" />
+	<property name="runtime.folder" value="${runtime.folder}" />
+	<property name="ucsf-backend.folder" value="${ucsf-backend.folder}" />
+	<property name="mvn.command" value="${mvn.command}" />
+	<property name="ucsf-tomcat-bin-folder" value="${ucsf-tomcat-bin-folder}" />
+	<property name="target.file.name" value="ucsf-server.war" />
+
+	<import file="./common.xml" />
+
+	<target name="clean">
+		<echo message="Clean project">
+		</echo>
+		<antcall target="ucsf.mvn.clean.all">
+		</antcall>
+	</target>
+
+	<target name="update.code">
+		<echo message="Update code" />
+		<exec executable="sudo" dir="${ucsf-backend.folder}" spawn="false">
+			<arg value="git pull" />
+		</exec>
+	</target>
+
+	<target name="compile" depends="ucsf.install.dependance">
+		<echo message="Compile" />
+	</target>
+
+	<target name="package.war">
+		<echo message="Package the war file" />
+		<antcall target="mvn.clean.package">
+		</antcall>
+	</target>
+
+	<target name="deploy.war" depends="clean,update.code,compile,package.war,backup.war">
+		<echo message="Deploy the newest war file" />
+		<antcall target="copy.target.file.to.runtime">
+		</antcall>
+		<echo message="Restart tomcat7" />
+		<exec executable="sudo" dir="${ucsf-tomcat-bin-folder}" spawn="false">
+			<arg value="/bin/sh" />
+			<arg value="shutdown.sh" />
+		</exec>
+		<exec executable="sudo" dir="${ucsf-tomcat-bin-folder}" spawn="false">
+			<arg value="/bin/sh" />
+			<arg value="startup.sh" />
+		</exec>
+	</target>
+
+	<target name="backup.war">
+		<echo message="Backup the current war file" />
+		<antcall target="backup.runtime.file">
+		</antcall>
+	</target>
+
+</project>
