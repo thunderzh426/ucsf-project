@@ -15,19 +15,19 @@
     <br />
     <span id="upload-file-message"></span>
   </form>
-  <button id="get-todo-btn" onclick="makeGetCall('/todolist')">List all todo files</button>
-  <button id="get-done-btn" onclick="makeGetCall('/donelist')">List all done files</button>
+  <button id="get-todo-btn" onclick="makeGetCall('/ucsf/todolist')">List all todo files</button>
+  <button id="get-done-btn" onclick="makeGetCall('/ucsf/donelist')">List all done files</button>
   <button id="process-btn" onclick="processTodoFiles()">Process</button>
-  <button id="delete-done-btn" onclick="makeDeleteCall('donelist')">Delete done files</button>
+  <button id="delete-done-btn" onclick="makeDeleteCall('/ucsf/donelist')">Delete done files</button>
   <hr />
   
-  <button id="get-anbs-btn" onclick="makeGetCall('/anbs')">Get all AccessionNumberBlocks</button>
-  <button id="get-profiles-btn" onclick="makeGetCall('/profiles')">Get all Profiles</button>
-  <button id="get-trials-btn" onclick="makeGetCall('/trials')">Get all Trials</button>
+  <button id="get-anbs-btn" onclick="makeGetCall('/ucsf/anbs')">Get all AccessionNumberBlocks</button>
+  <button id="get-profiles-btn" onclick="makeGetCall('/ucsf/profiles')">Get all Profiles</button>
+  <button id="get-trials-btn" onclick="makeGetCall('/ucsf/trials')">Get all Trials</button>
   <div>
   	<label for="trial-id">Get Trial By Id:</label>
     <input id="trial-id" type="text"/>
-    <button onclick="makeGetCall('/trial/','#trial-id')">Send Request</button>
+    <button onclick="makeGetCall('/ucsf/trial/','#trial-id')">Send Request</button>
   </div>
   <div>
   	<label for="profile-trials">Get Trials By Profile Id:</label>
@@ -63,15 +63,15 @@
   <hr/>
   <div>
   	<label for="del-anb">Delete all accessions:</label>
-    <button onclick="makeDeleteCall('/anbs')">DELETE</button>
+    <button onclick="makeDeleteCall('/ucsf/anbs')">DELETE</button>
   </div>
   <div>
   	<label for="del-profile">Delete all profiles:</label>
-    <button onclick="makeDeleteCall('/profiles')">DELETE</button>
+    <button onclick="makeDeleteCall('/ucsf/profiles')">DELETE</button>
   </div>
   <div>
   	<label for="del-trials">Delete all trials:</label>
-    <button onclick="makeDeleteCall('/trials')">DELETE</button>
+    <button onclick="makeDeleteCall('/ucsf/trials')">DELETE</button>
   </div>
   <div id="retrieved-data"></div>
   <!-- Javascript functions -->
@@ -89,7 +89,7 @@
      */
     function uploadFile() {
       $.ajax({
-        url: "/uploadFile",
+        url: "/ucsf/uploadFile",
         type: "POST",
         data: new FormData($("#upload-file-form")[0]),
         enctype: 'multipart/form-data',
@@ -109,7 +109,7 @@
     } // function uploadFile
     function createAnb() {
         $.ajax({
-          url: "/create",
+          url: "/ucsf/create",
           type: "POST",
           data: JSON.stringify({
         	  "firstName": $("#first-name").val(),
@@ -158,7 +158,7 @@
     	$("#retrieved-data").text("");
         $.ajax({
 	       	type: "GET",
-	   		url: "/profile/"+$("#profile-trials-id").val()+"/trials?_=" + new Date().getTime(),
+	   		url: "/ucsf/profile/"+$("#profile-trials-id").val()+"/trials?_=" + new Date().getTime(),
 	   		contentType:"application/json",
 	   		dataType: "json",
 	   		data: {},
@@ -176,7 +176,7 @@
     	$("#retrieved-data").text("");
         $.ajax({
 	       	type: "POST",
-	   		url: "/todolist/process?_=" + new Date().getTime(),
+	   		url: "/ucsf/todolist/process?_=" + new Date().getTime(),
           success: function (data) {
             // Handle upload success
             $("#retrieved-data").text("Data imported succussfully.");
