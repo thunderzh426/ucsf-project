@@ -1,18 +1,65 @@
 package ucsf.services;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import ucsf.dao.ProfileDao;
+import ucsf.dao.TrialDao;
 import ucsf.models.AccessionNumberBlock;
 import ucsf.models.Profile;
 import ucsf.models.Trial;
 
 @Service
 public class GeneralService {
+	
+	public Object processTodoFiles() {
+		Map<String, Object> result = new HashMap<String, Object>();
+	    try {
+	    	File folder = new File(env.getProperty("ucsf.todo.file.path"));
+	    	File[] listOfFiles = folder.listFiles();
+	    	if (listOfFiles != null){
+	    		for (File f: listOfFiles){
+					ByteArrayInputStream bytestream = new ByteArrayInputStream(Files.readAllBytes(Paths.get(f.getAbsolutePath())));
+					String str = IOUtils.toString(bytestream, StandardCharsets.UTF_8);
+					JSONObject jsonObj = new JSONObject(str);
+					JSONObject profileJson = jsonObj.getJSONObject("profile");
+					JSONObject trialsJson = jsonObj.getJSONObject("trials");
+					long id = Long.parseLong(FilenameUtils.getBaseName(f.getName()));
+					Profile profile = parseProfile(id,profileJson);
+					profileDao.create(profile);
+					List<Trial> trials = parsetrials(profile.getId(), trialsJson);
+					for(Trial t: trials){
+					  trialDao.create(t);
+					}
+					Files.move(Paths.get(f.getAbsolutePath()), Paths.get(env.getProperty("ucsf.done.file.path"), f.getName()));
+	    		}
+	    	}
+	    	result.put("success", true);
+	    	return result;
+	    }
+	    catch (Exception ex) {
+	      result.put("success", false);
+	      result.put("message", ex.getMessage());
+	      return result;
+	    }
+	  }
 	
 	public Profile parseProfile(long id, JSONObject obj){
 		Profile p = new Profile();
@@ -119,4 +166,13 @@ public class GeneralService {
 		}
 		return s;
 	}
+	
+	@Autowired
+	private Environment env;
+	
+	@Autowired
+	private ProfileDao profileDao;
+	
+	@Autowired
+	private TrialDao trialDao;
 }

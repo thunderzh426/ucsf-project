@@ -46,9 +46,6 @@ public class AccessionNumberBlockController {
   // ------------------------
   // PUBLIC METHODS
   // ------------------------
-
-	@Autowired
-	private Environment env;
 	
   @RequestMapping(value = "/uploadFile", method = RequestMethod.POST)
   @ResponseBody
@@ -148,31 +145,7 @@ public class AccessionNumberBlockController {
   @RequestMapping(value="/todolist/process", method = RequestMethod.POST)
   @ResponseBody
   public Object processTodoFiles() {
-    try {
-    	File folder = new File(env.getProperty("ucsf.todo.file.path"));
-    	File[] listOfFiles = folder.listFiles();
-    	if (listOfFiles != null){
-    		for (File f: listOfFiles){
-				ByteArrayInputStream bytestream = new ByteArrayInputStream(Files.readAllBytes(Paths.get(f.getAbsolutePath())));
-				String str = IOUtils.toString(bytestream, StandardCharsets.UTF_8);
-				JSONObject jsonObj = new JSONObject(str);
-				JSONObject profileJson = jsonObj.getJSONObject("profile");
-				JSONObject trialsJson = jsonObj.getJSONObject("trials");
-				long id = Long.parseLong(FilenameUtils.getBaseName(f.getName()));
-				Profile profile = generalService.parseProfile(id,profileJson);
-				profileDao.create(profile);
-				List<Trial> trials = generalService.parsetrials(profile.getId(), trialsJson);
-				for(Trial t: trials){
-				  trialDao.create(t);
-				}
-				Files.move(Paths.get(f.getAbsolutePath()), Paths.get(env.getProperty("ucsf.done.file.path"), f.getName()));
-    		}
-    	}
-    	return new ResponseEntity<>(HttpStatus.OK);
-    }
-    catch (Exception ex) {
-      return "Error processing files " + ex.toString();
-    }
+	  return generalService.processTodoFiles();
   }
   
   /**
@@ -354,48 +327,15 @@ public class AccessionNumberBlockController {
     }
   }
   
-  
-  
-  /**
-   * Retrieve the id for the user with the passed email address.
-   
-  @RequestMapping(value="/get-by-email")
-  @ResponseBody
-  public String getByEmail(String email) {
-    String userId;
-    try {
-      User user = anbDao.getByEmail(email);
-      userId = String.valueOf(user.getId());
-    }
-    catch (Exception ex) {
-      return "User not found: " + ex.toString();
-    }
-    return "The user id is: " + userId;
-  }*/
-  
-  /**
-   * Update the email and the name for the user indentified by the passed id.
-   
-  @RequestMapping(value="/update")
-  @ResponseBody
-  public String updateName(long id, String email, String name) {
-    try {
-      User user = anbDao.getById(id);
-      user.setEmail(email);
-      user.setName(name);
-      anbDao.update(user);
-    }
-    catch (Exception ex) {
-      return "Error updating the user: " + ex.toString();
-    }
-    return "User succesfully updated!";
-  } */
 
   // ------------------------
   // PRIVATE FIELDS
   // ------------------------
   
-  // Wire the UserDao used inside this controller.
+  // Wire the Dao used inside this controller.
+  @Autowired
+  private Environment env;
+  
   @Autowired
   private AccessionNumberBlockDao anbDao;
   
@@ -408,4 +348,4 @@ public class AccessionNumberBlockController {
   @Autowired
   private GeneralService generalService;
   
-} // class UserController
+}
